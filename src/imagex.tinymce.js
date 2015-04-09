@@ -1,347 +1,372 @@
 angular.module('imagex.tinymce', ['image-management', 'config', 'notifications'])
-    .run(['imageManagement', 'config', 'topicMessageDispatcher', function(imageManagement, config, topicMessageDispatcher) {
-        tinymce.PluginManager.add('binartax.img', function(editor) {
+    .run(['$rootScope', 'imageManagement', 'config', 'topicMessageDispatcher', function ($rootScope, imageManagement, config, topicMessageDispatcher) {
+        $rootScope.$watch(function () {
+            return typeof tinymce != 'undefined';
+        }, function (value) {
+            if (value) addPlugin();
+        });
 
-            function getImageSize(url, callback) {
-                var img = document.createElement('img');
+        function addPlugin() {
+            tinymce.PluginManager.add('binartax.img', function (editor) {
 
-                function done(width, height) {
-                    if (img.parentNode) {
-                        img.parentNode.removeChild(img);
-                    }
+                function getImageSize(url, callback) {
+                    var img = document.createElement('img');
 
-                    callback({width: width, height: height});
-                }
-
-                img.onload = function() {
-                    done(img.clientWidth, img.clientHeight);
-                };
-
-                img.onerror = function() {
-                    done();
-                };
-
-                var style = img.style;
-                style.visibility = 'hidden';
-                style.position = 'fixed';
-                style.bottom = style.left = 0;
-                style.width = style.height = 'auto';
-
-                document.body.appendChild(img);
-                img.src = url;
-            }
-
-            function buildListItems(inputList, itemCallback, startItems) {
-                function appendItems(values, output) {
-                    output = output || [];
-
-                    tinymce.each(values, function(item) {
-                        var menuItem = {text: item.text || item.title};
-
-                        if (item.menu) {
-                            menuItem.menu = appendItems(item.menu);
-                        } else {
-                            menuItem.value = item.value;
-                            itemCallback(menuItem);
+                    function done(width, height) {
+                        if (img.parentNode) {
+                            img.parentNode.removeChild(img);
                         }
 
-                        output.push(menuItem);
-                    });
-
-                    return output;
-                }
-
-                return appendItems(inputList, startItems || []);
-            }
-
-            function createImageList(callback) {
-                return function() {
-                    var imageList = editor.settings.image_list;
-
-                    if (typeof(imageList) == "string") {
-                        tinymce.util.XHR.send({
-                            url: imageList,
-                            success: function(text) {
-                                callback(tinymce.util.JSON.parse(text));
-                            }
-                        });
-                    } else if (typeof(imageList) == "function") {
-                        imageList(callback);
-                    } else {
-                        callback(imageList);
-                    }
-                };
-            }
-
-            function showDialog(imageList) {
-                var win, data = {}, dom = editor.dom, imgElm = editor.selection.getNode();
-                var width, height, imageListCtrl, classListCtrl, imageDimensions = editor.settings.image_dimensions !== false;
-                var binImageCode = 'images/redacted/' + uuid.v4() + '.img';
-
-                function recalcSize() {
-                    var widthCtrl, heightCtrl, newWidth, newHeight;
-
-                    widthCtrl = win.find('#width')[0];
-                    heightCtrl = win.find('#height')[0];
-
-                    if (!widthCtrl || !heightCtrl) {
-                        return;
+                        callback({width: width, height: height});
                     }
 
-                    newWidth = widthCtrl.value();
-                    newHeight = heightCtrl.value();
-
-                    if (win.find('#constrain')[0].checked() && width && height && newWidth && newHeight) {
-                        if (width != newWidth) {
-                            newHeight = Math.round((newWidth / width) * newHeight);
-                            heightCtrl.value(newHeight);
-                        } else {
-                            newWidth = Math.round((newHeight / height) * newWidth);
-                            widthCtrl.value(newWidth);
-                        }
-                    }
-
-                    width = newWidth;
-                    height = newHeight;
-                }
-
-                function onSubmitForm() {
-                    function waitLoad(imgElm) {
-                        function selectImage() {
-                            imgElm.onload = imgElm.onerror = null;
-
-                            if (editor.selection) {
-                                editor.selection.select(imgElm);
-                                editor.nodeChanged();
-                            }
-                        }
-
-                        imgElm.onload = function() {
-                            if (!data.width && !data.height && imageDimensions) {
-                                dom.setAttribs(imgElm, {
-                                    width: imgElm.clientWidth,
-                                    height: imgElm.clientHeight
-                                });
-                            }
-
-                            selectImage();
-                        };
-
-                        imgElm.onerror = selectImage;
-                    }
-
-                    recalcSize();
-
-                    data = tinymce.extend(data, win.toJSON());
-
-                    if (!data.alt) {
-                        data.alt = '';
-                    }
-
-                    if (data.width === '') {
-                        data.width = null;
-                    }
-
-                    if (data.height === '') {
-                        data.height = null;
-                    }
-
-                    data = {
-                        src: data.src,
-                        alt: data.alt,
-                        width: data.width,
-                        height: data.height,
-                        "bin-image": binImageCode
+                    img.onload = function () {
+                        done(img.clientWidth, img.clientHeight);
                     };
 
-                    editor.undoManager.transact(function() {
-                        if (!data.src) {
-                            if (imgElm) {
-                                dom.remove(imgElm);
-                                editor.focus();
-                                editor.nodeChanged();
+                    img.onerror = function () {
+                        done();
+                    };
+
+                    var style = img.style;
+                    style.visibility = 'hidden';
+                    style.position = 'fixed';
+                    style.bottom = style.left = 0;
+                    style.width = style.height = 'auto';
+
+                    document.body.appendChild(img);
+                    img.src = url;
+                }
+
+                function buildListItems(inputList, itemCallback, startItems) {
+                    function appendItems(values, output) {
+                        output = output || [];
+
+                        tinymce.each(values, function (item) {
+                            var menuItem = {text: item.text || item.title};
+
+                            if (item.menu) {
+                                menuItem.menu = appendItems(item.menu);
+                            } else {
+                                menuItem.value = item.value;
+                                itemCallback(menuItem);
                             }
 
+                            output.push(menuItem);
+                        });
+
+                        return output;
+                    }
+
+                    return appendItems(inputList, startItems || []);
+                }
+
+                function createImageList(callback) {
+                    return function () {
+                        var imageList = editor.settings.image_list;
+
+                        if (typeof(imageList) == "string") {
+                            tinymce.util.XHR.send({
+                                url: imageList,
+                                success: function (text) {
+                                    callback(tinymce.util.JSON.parse(text));
+                                }
+                            });
+                        } else if (typeof(imageList) == "function") {
+                            imageList(callback);
+                        } else {
+                            callback(imageList);
+                        }
+                    };
+                }
+
+                function showDialog(imageList) {
+                    var win, data = {}, dom = editor.dom, imgElm = editor.selection.getNode();
+                    var width, height, imageListCtrl, classListCtrl, imageDimensions = editor.settings.image_dimensions !== false;
+                    var binImageCode = 'images/redacted/' + uuid.v4() + '.img';
+
+                    function recalcSize() {
+                        var widthCtrl, heightCtrl, newWidth, newHeight;
+
+                        widthCtrl = win.find('#width')[0];
+                        heightCtrl = win.find('#height')[0];
+
+                        if (!widthCtrl || !heightCtrl) {
                             return;
                         }
 
-                        if (!imgElm) {
-                            data.id = '__mcenew';
-                            editor.focus();
-                            editor.selection.setContent(dom.createHTML('img', data));
-                            imgElm = dom.get('__mcenew');
-                            dom.setAttrib(imgElm, 'id', null);
-                        } else {
-                            dom.setAttribs(imgElm, data);
+                        newWidth = widthCtrl.value();
+                        newHeight = heightCtrl.value();
+
+                        if (win.find('#constrain')[0].checked() && width && height && newWidth && newHeight) {
+                            if (width != newWidth) {
+                                newHeight = Math.round((newWidth / width) * newHeight);
+                                heightCtrl.value(newHeight);
+                            } else {
+                                newWidth = Math.round((newHeight / height) * newWidth);
+                                widthCtrl.value(newWidth);
+                            }
                         }
 
-                        waitLoad(imgElm);
-                    });
-                }
-
-                function srcChange(e) {
-                    var meta = e.meta || {};
-
-                    if (imageListCtrl) {
-                        imageListCtrl.value(editor.convertURL(this.value(), 'src'));
+                        width = newWidth;
+                        height = newHeight;
                     }
 
-                    tinymce.each(meta, function(value, key) {
-                        win.find('#' + key).value(value);
-                    });
+                    function onSubmitForm() {
+                        function waitLoad(imgElm) {
+                            function selectImage() {
+                                imgElm.onload = imgElm.onerror = null;
 
-                    if (!meta.width && !meta.height) {
-                        var srcURL = this.value(),
-                            absoluteURLPattern = new RegExp('^(?:[a-z]+:)?//', 'i'),
-                            baseURL = editor.settings.document_base_url;
-
-                        //Pattern test the src url and make sure we haven't already prepended the url
-                        if (baseURL && !absoluteURLPattern.test(srcURL) && srcURL.substring(0, baseURL.length) !== baseURL) {
-                            this.value(baseURL + srcURL);
-                        }
-
-                        getImageSize(this.value(), function(data) {
-                            if (data.width && data.height && imageDimensions) {
-                                width = data.width;
-                                height = data.height;
-
-                                win.find('#width').value(width);
-                                win.find('#height').value(height);
-                            }
-                        });
-                    }
-                }
-
-                width = dom.getAttrib(imgElm, 'width');
-                height = dom.getAttrib(imgElm, 'height');
-
-                if (imgElm.nodeName == 'IMG' && !imgElm.getAttribute('data-mce-object') && !imgElm.getAttribute('data-mce-placeholder')) {
-                    data = {
-                        src: dom.getAttrib(imgElm, 'src'),
-                        alt: dom.getAttrib(imgElm, 'alt'),
-                        "class": dom.getAttrib(imgElm, 'class'),
-                        width: width,
-                        height: height
-                    };
-                } else {
-                    imgElm = null;
-                }
-
-                if (imageList) {
-                    imageListCtrl = {
-                        type: 'listbox',
-                        label: 'Image list',
-                        values: buildListItems(
-                            imageList,
-                            function(item) {
-                                item.value = editor.convertURL(item.value || item.url, 'src');
-                            },
-                            [{text: 'None', value: ''}]
-                        ),
-                        value: data.src && editor.convertURL(data.src, 'src'),
-                        onselect: function(e) {
-                            var altCtrl = win.find('#alt');
-
-                            if (!altCtrl.value() || (e.lastControl && altCtrl.value() == e.lastControl.text())) {
-                                altCtrl.value(e.control.text());
-                            }
-
-                            win.find('#src').value(e.control.value()).fire('change');
-                        },
-                        onPostRender: function() {
-                            imageListCtrl = this;
-                        }
-                    };
-                }
-
-                if (editor.settings.image_class_list) {
-                    classListCtrl = {
-                        name: 'class',
-                        type: 'listbox',
-                        label: 'Class',
-                        values: buildListItems(
-                            editor.settings.image_class_list,
-                            function(item) {
-                                if (item.value) {
-                                    item.textStyle = function() {
-                                        return editor.formatter.getCssText({inline: 'img', classes: [item.value]});
-                                    };
+                                if (editor.selection) {
+                                    editor.selection.select(imgElm);
+                                    editor.nodeChanged();
                                 }
                             }
-                        )
-                    };
-                }
 
-                // General settings shared between simple and advanced dialogs
-                var generalFormItems = [
-                    {
-                        name: 'src',
-                        type: 'filepicker',
-                        filetype: 'image',
-                        label: 'Source',
-                        autofocus: true,
-                        onchange: srcChange
-                    },
-                    imageListCtrl
-                ];
+                            imgElm.onload = function () {
+                                if (!data.width && !data.height && imageDimensions) {
+                                    dom.setAttribs(imgElm, {
+                                        width: imgElm.clientWidth,
+                                        height: imgElm.clientHeight
+                                    });
+                                }
 
-                if (editor.settings.image_description !== false) {
-                    generalFormItems.push({name: 'alt', type: 'textbox', label: 'Image description'});
-                }
+                                selectImage();
+                            };
 
-                if (imageDimensions) {
-                    generalFormItems.push({
-                        type: 'container',
-                        label: 'Dimensions',
-                        layout: 'flex',
-                        direction: 'row',
-                        align: 'center',
-                        spacing: 5,
-                        items: [
-                            {name: 'width', type: 'textbox', maxLength: 5, size: 3, onchange: recalcSize, ariaLabel: 'Width'},
-                            {type: 'label', text: 'x'},
-                            {name: 'height', type: 'textbox', maxLength: 5, size: 3, onchange: recalcSize, ariaLabel: 'Height'},
-                            {name: 'constrain', type: 'checkbox', checked: true, text: 'Constrain proportions'}
-                        ]
-                    });
-                }
+                            imgElm.onerror = selectImage;
+                        }
 
-                generalFormItems.push(classListCtrl);
+                        recalcSize();
 
-                imageManagement.fileUpload({
-                    dataType: 'json',
-                    add: function (e, d) {
-                        var violations = imageManagement.validate(d);
-                        if (violations.length == 0) {
-                            imageManagement.upload({file: d, code: binImageCode});
+                        data = tinymce.extend(data, win.toJSON());
 
-                            $('.mce-window input')[0].value = config.awsPath + binImageCode;
-                        } else {
-                            violations.forEach(function (v) {
-                                topicMessageDispatcher.fire('system.warning', {
-                                    code: 'upload.image.' + v,
-                                    default: v
-                                });
+                        if (!data.alt) {
+                            data.alt = '';
+                        }
+
+                        if (data.width === '') {
+                            data.width = null;
+                        }
+
+                        if (data.height === '') {
+                            data.height = null;
+                        }
+
+                        data = {
+                            src: data.src,
+                            alt: data.alt,
+                            width: data.width,
+                            height: data.height,
+                            "bin-image": binImageCode
+                        };
+
+                        editor.undoManager.transact(function () {
+                            if (!data.src) {
+                                if (imgElm) {
+                                    dom.remove(imgElm);
+                                    editor.focus();
+                                    editor.nodeChanged();
+                                }
+
+                                return;
+                            }
+
+                            if (!imgElm) {
+                                data.id = '__mcenew';
+                                editor.focus();
+                                editor.selection.setContent(dom.createHTML('img', data));
+                                imgElm = dom.get('__mcenew');
+                                dom.setAttrib(imgElm, 'id', null);
+                            } else {
+                                dom.setAttribs(imgElm, data);
+                            }
+
+                            waitLoad(imgElm);
+                        });
+                    }
+
+                    function srcChange(e) {
+                        var meta = e.meta || {};
+
+                        if (imageListCtrl) {
+                            imageListCtrl.value(editor.convertURL(this.value(), 'src'));
+                        }
+
+                        tinymce.each(meta, function (value, key) {
+                            win.find('#' + key).value(value);
+                        });
+
+                        if (!meta.width && !meta.height) {
+                            var srcURL = this.value(),
+                                absoluteURLPattern = new RegExp('^(?:[a-z]+:)?//', 'i'),
+                                baseURL = editor.settings.document_base_url;
+
+                            //Pattern test the src url and make sure we haven't already prepended the url
+                            if (baseURL && !absoluteURLPattern.test(srcURL) && srcURL.substring(0, baseURL.length) !== baseURL) {
+                                this.value(baseURL + srcURL);
+                            }
+
+                            getImageSize(this.value(), function (data) {
+                                if (data.width && data.height && imageDimensions) {
+                                    width = data.width;
+                                    height = data.height;
+
+                                    win.find('#width').value(width);
+                                    win.find('#height').value(height);
+                                }
                             });
                         }
                     }
+
+                    width = dom.getAttrib(imgElm, 'width');
+                    height = dom.getAttrib(imgElm, 'height');
+
+                    if (imgElm.nodeName == 'IMG' && !imgElm.getAttribute('data-mce-object') && !imgElm.getAttribute('data-mce-placeholder')) {
+                        data = {
+                            src: dom.getAttrib(imgElm, 'src'),
+                            alt: dom.getAttrib(imgElm, 'alt'),
+                            "class": dom.getAttrib(imgElm, 'class'),
+                            width: width,
+                            height: height
+                        };
+                    } else {
+                        imgElm = null;
+                    }
+
+                    if (imageList) {
+                        imageListCtrl = {
+                            type: 'listbox',
+                            label: 'Image list',
+                            values: buildListItems(
+                                imageList,
+                                function (item) {
+                                    item.value = editor.convertURL(item.value || item.url, 'src');
+                                },
+                                [{text: 'None', value: ''}]
+                            ),
+                            value: data.src && editor.convertURL(data.src, 'src'),
+                            onselect: function (e) {
+                                var altCtrl = win.find('#alt');
+
+                                if (!altCtrl.value() || (e.lastControl && altCtrl.value() == e.lastControl.text())) {
+                                    altCtrl.value(e.control.text());
+                                }
+
+                                win.find('#src').value(e.control.value()).fire('change');
+                            },
+                            onPostRender: function () {
+                                imageListCtrl = this;
+                            }
+                        };
+                    }
+
+                    if (editor.settings.image_class_list) {
+                        classListCtrl = {
+                            name: 'class',
+                            type: 'listbox',
+                            label: 'Class',
+                            values: buildListItems(
+                                editor.settings.image_class_list,
+                                function (item) {
+                                    if (item.value) {
+                                        item.textStyle = function () {
+                                            return editor.formatter.getCssText({
+                                                inline: 'img',
+                                                classes: [item.value]
+                                            });
+                                        };
+                                    }
+                                }
+                            )
+                        };
+                    }
+
+                    // General settings shared between simple and advanced dialogs
+                    var generalFormItems = [
+                        {
+                            name: 'src',
+                            type: 'filepicker',
+                            filetype: 'image',
+                            label: 'Source',
+                            autofocus: true,
+                            onchange: srcChange
+                        },
+                        imageListCtrl
+                    ];
+
+                    if (editor.settings.image_description !== false) {
+                        generalFormItems.push({name: 'alt', type: 'textbox', label: 'Image description'});
+                    }
+
+                    if (imageDimensions) {
+                        generalFormItems.push({
+                            type: 'container',
+                            label: 'Dimensions',
+                            layout: 'flex',
+                            direction: 'row',
+                            align: 'center',
+                            spacing: 5,
+                            items: [
+                                {
+                                    name: 'width',
+                                    type: 'textbox',
+                                    maxLength: 5,
+                                    size: 3,
+                                    onchange: recalcSize,
+                                    ariaLabel: 'Width'
+                                },
+                                {type: 'label', text: 'x'},
+                                {
+                                    name: 'height',
+                                    type: 'textbox',
+                                    maxLength: 5,
+                                    size: 3,
+                                    onchange: recalcSize,
+                                    ariaLabel: 'Height'
+                                },
+                                {name: 'constrain', type: 'checkbox', checked: true, text: 'Constrain proportions'}
+                            ]
+                        });
+                    }
+
+                    generalFormItems.push(classListCtrl);
+
+                    imageManagement.fileUpload({
+                        dataType: 'json',
+                        add: function (e, d) {
+                            var violations = imageManagement.validate(d);
+                            if (violations.length == 0) {
+                                imageManagement.upload({file: d, code: binImageCode});
+
+                                $('.mce-window input')[0].value = config.awsPath + binImageCode;
+                            } else {
+                                violations.forEach(function (v) {
+                                    topicMessageDispatcher.fire('system.warning', {
+                                        code: 'upload.image.' + v,
+                                        default: v
+                                    });
+                                });
+                            }
+                        }
+                    });
+
+                    win = editor.windowManager.open({
+                        title: 'Insert/edit image',
+                        data: data,
+                        body: generalFormItems,
+                        onSubmit: onSubmitForm
+                    });
+                }
+
+                editor.addButton('binartax.img', {
+                    icon: 'image',
+                    tooltip: 'Insert/edit image',
+                    onclick: createImageList(showDialog),
+                    stateSelector: 'img:not([data-mce-object],[data-mce-placeholder])'
                 });
 
-                win = editor.windowManager.open({
-                    title: 'Insert/edit image',
-                    data: data,
-                    body: generalFormItems,
-                    onSubmit: onSubmitForm
-                });
-            }
-
-            editor.addButton('binartax.img', {
-                icon: 'image',
-                tooltip: 'Insert/edit image',
-                onclick: createImageList(showDialog),
-                stateSelector: 'img:not([data-mce-object],[data-mce-placeholder])'
+                editor.addCommand('mceImage', createImageList(showDialog));
             });
-
-            editor.addCommand('mceImage', createImageList(showDialog));
-        });
+        }
     }]);
