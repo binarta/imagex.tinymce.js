@@ -188,8 +188,8 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                                 '</div>' +
 
                                 '<div class="form-group" ng-if="uploading">' +
-                                '<span class="help-block" i18n code="upload.image.uploading" read-only>' +
-                                '<i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="var"></span></span>' +
+                                '<strong class="help-block" i18n code="upload.image.uploading" read-only>' +
+                                '<i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="var"></span></strong>' +
                                 '</div>' +
 
                                 '<div ng-hide="firstImage && violations.length > 0">' +
@@ -203,12 +203,12 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
 
                                 '<div class="form-group">' +
                                 '<label for="tinymceImageFormAltField" i18n code="i18n.menu.image.alt.label" read-only ng-bind="var"></label>' +
-                                '<input type="text" class="form-control" name="alt" id="tinymceImageFormAltField" ng-model="image.alt">' +
+                                '<input type="text" class="form-control" name="alt" id="tinymceImageFormAltField" ng-disabled="uploading" ng-model="image.alt">' +
                                 '</div>' +
 
                                 '<div class="form-group">' +
                                 '<label for="tinymceImageFormSizeField" i18n code="i18n.menu.image.size.label" read-only ng-bind="var"></label>' +
-                                '<select class="form-control" ng-model="image.width">' +
+                                '<select class="form-control" ng-disabled="uploading" ng-model="image.width">' +
                                 '<option ng-repeat="size in availableSizes | orderBy: size.width" value="{{size.width}}" ' +
                                 'ng-selected="{{size.width == image.width}}"' +
                                 'i18n code="i18n.menu.image.size.{{size.name}}" read-only ng-bind="var"></option>' +
@@ -219,12 +219,12 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
 
                                 '<div class=\"dropdown-menu-buttons\">' +
                                 '<hr>' +
-                                '<button type="button" class="btn btn-danger pull-left" ng-click="remove()" ng-if="showRemoveImageButton" ' +
+                                '<button type="button" class="btn btn-danger pull-left" ng-click="remove()" ng-disabled="uploading" ng-if="showRemoveImageButton" ' +
                                 'i18n code="i18n.menu.remove.image.button" read-only ng-bind="var"></button>' +
-                                '<button type="button" class="btn btn-success pull-left" ng-click="newImage()" ng-if="!showRemoveImageButton" ' +
+                                '<button type="button" class="btn btn-success pull-left" ng-click="newImage()" ng-disabled="uploading" ng-if="!showRemoveImageButton" ' +
                                 'i18n code="i18n.menu.new.image.button" read-only ng-bind="var"></button>' +
-                                '<button type="submit" class="btn btn-primary" i18n code="clerk.menu.ok.button" read-only ng-bind="var"></button>' +
-                                '<button type="button" class="btn btn-default" ng-click="cancel()" i18n code="clerk.menu.cancel.button" read-only ng-bind="var"></button>' +
+                                '<button type="submit" class="btn btn-primary" ng-disabled="uploading" i18n code="clerk.menu.ok.button" read-only ng-bind="var"></button>' +
+                                '<button type="button" class="btn btn-default" ng-click="cancel()" ng-disabled="uploading" i18n code="clerk.menu.cancel.button" read-only ng-bind="var"></button>' +
                                 '</div>' +
                                 '</form>',
                                 scope: scope
