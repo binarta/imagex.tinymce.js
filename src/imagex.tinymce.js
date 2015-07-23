@@ -178,17 +178,18 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                             editModeRenderer.open({
                                 id: 'popup',
                                 template: '<form name="tinymceImageForm" id="tinymceImageForm" ng-submit="submit()">' +
-                                '<h4 i18n code="i18n.menu.insert.image.title" read-only>{{var}}</h4>' +
+                                '<h4 i18n code="i18n.menu.insert.image.title" read-only ng-bind="var"></h4>' +
                                 '<hr>' +
 
                                 '<div class="form-group" ng-if="violations.length > 0">' +
                                 '<div ng-repeat="violation in violations">' +
-                                '<span class="help-block text-danger" i18n code="upload.image.{{violation}}" read-only>{{var}}</span>' +
+                                '<span class="help-block text-danger" i18n code="upload.image.{{violation}}" read-only ng-bind="var"></span>' +
                                 '</div>' +
                                 '</div>' +
 
                                 '<div class="form-group" ng-if="uploading">' +
-                                '<span class="help-block" i18n code="upload.image.uploading" read-only><i class="fa fa-spinner fa-spin fa-fw"></i> {{var}}</span>' +
+                                '<span class="help-block" i18n code="upload.image.uploading" read-only>' +
+                                '<i class="fa fa-spinner fa-spin fa-fw"></i> <span ng-bind="var"></span></span>' +
                                 '</div>' +
 
                                 '<div ng-hide="firstImage && violations.length > 0">' +
@@ -201,16 +202,16 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                                 '</div>' +
 
                                 '<div class="form-group">' +
-                                '<label for="tinymceImageFormAltField" i18n code="i18n.menu.image.alt.label" read-only>{{var}}</label>' +
+                                '<label for="tinymceImageFormAltField" i18n code="i18n.menu.image.alt.label" read-only ng-bind="var"></label>' +
                                 '<input type="text" class="form-control" name="alt" id="tinymceImageFormAltField" ng-model="image.alt">' +
                                 '</div>' +
 
                                 '<div class="form-group">' +
-                                '<label for="tinymceImageFormSizeField" i18n code="i18n.menu.image.size.label" read-only>{{var}}</label>' +
+                                '<label for="tinymceImageFormSizeField" i18n code="i18n.menu.image.size.label" read-only ng-bind="var"></label>' +
                                 '<select class="form-control" ng-model="image.width">' +
                                 '<option ng-repeat="size in availableSizes | orderBy: size.width" value="{{size.width}}" ' +
                                 'ng-selected="{{size.width == image.width}}"' +
-                                'i18n code="i18n.menu.image.size.{{size.name}}" read-only>{{var}}</option>' +
+                                'i18n code="i18n.menu.image.size.{{size.name}}" read-only ng-bind="var"></option>' +
                                 '</select>' +
                                 '</div>' +
 
@@ -219,11 +220,11 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                                 '<div class=\"dropdown-menu-buttons\">' +
                                 '<hr>' +
                                 '<button type="button" class="btn btn-danger pull-left" ng-click="remove()" ng-if="showRemoveImageButton" ' +
-                                'i18n code="i18n.menu.remove.image.button" read-only>{{var}}</button>' +
+                                'i18n code="i18n.menu.remove.image.button" read-only ng-bind="var"></button>' +
                                 '<button type="button" class="btn btn-success pull-left" ng-click="newImage()" ng-if="!showRemoveImageButton" ' +
-                                'i18n code="i18n.menu.new.image.button" read-only>{{var}}</button>' +
-                                '<button type="submit" class="btn btn-primary" i18n code="clerk.menu.ok.button" read-only>{{var}}</button>' +
-                                '<button type="button" class="btn btn-default" ng-click="cancel()" i18n code="clerk.menu.cancel.button" read-only>{{var}}</button>' +
+                                'i18n code="i18n.menu.new.image.button" read-only ng-bind="var"></button>' +
+                                '<button type="submit" class="btn btn-primary" i18n code="clerk.menu.ok.button" read-only ng-bind="var"></button>' +
+                                '<button type="button" class="btn btn-default" ng-click="cancel()" i18n code="clerk.menu.cancel.button" read-only ng-bind="var"></button>' +
                                 '</div>' +
                                 '</form>',
                                 scope: scope
