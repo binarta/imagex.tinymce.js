@@ -1,118 +1,148 @@
-angular.module('imagex.tinymce', ['image-management', 'config', 'notifications'])
-    .run(['$rootScope', 'imageManagement', 'config', 'topicMessageDispatcher', function ($rootScope, imageManagement, config, topicMessageDispatcher) {
-        $rootScope.$watch(function () {
-            return typeof tinymce != 'undefined';
-        }, function (value) {
-            if (value) addPlugin();
+angular.module('imagex.tinymce', ['image-management', 'config', 'notifications', 'toggle.edit.mode'])
+    .run(['$rootScope', '$window', 'imageManagement', 'config', 'ngRegisterTopicHandler', 'editModeRenderer', function ($rootScope, $window, imageManagement, config, ngRegisterTopicHandler, editModeRenderer) {
+        ngRegisterTopicHandler({
+            topic: 'tinymce.loaded',
+            handler: addPlugin,
+            executeHandlerOnce: true
         });
 
         function addPlugin() {
-            tinymce.PluginManager.add('binartax.img', function (editor) {
+            $window.tinymce.PluginManager.add('binartax.img', function (editor) {
 
-                function getImageSize(url, callback) {
-                    var img = document.createElement('img');
+                const smallWidth = 100,
+                    mediumWidth = 300,
+                    largeWidth = 500,
+                    maxWidth = 750;
 
-                    function done(width, height) {
-                        if (img.parentNode) {
-                            img.parentNode.removeChild(img);
-                        }
+                editor.addButton('binartax.img', {
+                    icon: 'image',
+                    tooltip: 'Insert/edit image',
+                    onclick: open,
+                    stateSelector: 'img:not([data-mce-object],[data-mce-placeholder])'
+                });
 
-                        callback({width: width, height: height});
-                    }
+                editor.addCommand('mceImage', open);
 
-                    img.onload = function () {
-                        done(img.clientWidth, img.clientHeight);
-                    };
+                function open() {
+                    var scope = $rootScope.$new();
+                    scope.image = {};
+                    var dom = editor.dom;
+                    var imgElm = editor.selection.getNode();
+                    var file;
+                    var popupPanelOpened = false;
 
-                    img.onerror = function () {
-                        done();
-                    };
-
-                    var style = img.style;
-                    style.visibility = 'hidden';
-                    style.position = 'fixed';
-                    style.bottom = style.left = 0;
-                    style.width = style.height = 'auto';
-
-                    document.body.appendChild(img);
-                    img.src = url;
-                }
-
-                function buildListItems(inputList, itemCallback, startItems) {
-                    function appendItems(values, output) {
-                        output = output || [];
-
-                        tinymce.each(values, function (item) {
-                            var menuItem = {text: item.text || item.title};
-
-                            if (item.menu) {
-                                menuItem.menu = appendItems(item.menu);
-                            } else {
-                                menuItem.value = item.value;
-                                itemCallback(menuItem);
-                            }
-
-                            output.push(menuItem);
-                        });
-
-                        return output;
-                    }
-
-                    return appendItems(inputList, startItems || []);
-                }
-
-                function createImageList(callback) {
-                    return function () {
-                        var imageList = editor.settings.image_list;
-
-                        if (typeof(imageList) == "string") {
-                            tinymce.util.XHR.send({
-                                url: imageList,
-                                success: function (text) {
-                                    callback(tinymce.util.JSON.parse(text));
+                    imageManagement.fileUpload({
+                        dataType: 'json',
+                        add: function (e, d) {
+                            scope.violations = imageManagement.validate(d);
+                            if (scope.violations.length == 0) {
+                                file = d;
+                                if ($window.URL) {
+                                    scope.previewImageUrl = $window.URL.createObjectURL(d.files[0]);
+                                    var previewImg = new Image();
+                                    previewImg.addEventListener('load', function() {
+                                        scope.$apply(function () {
+                                            scope.image['original-width'] = previewImg.width;
+                                            setCalculatedAvailableSizes(previewImg.width);
+                                            scope.image.width = previewImg.width > maxWidth ? maxWidth : previewImg.width;
+                                        });
+                                    });
+                                    previewImg.src = scope.previewImageUrl;
+                                } else {
+                                    setCalculatedAvailableSizes(maxWidth);
+                                    scope.image.width = maxWidth;
                                 }
-                            });
-                        } else if (typeof(imageList) == "function") {
-                            imageList(callback);
-                        } else {
-                            callback(imageList);
-                        }
-                    };
-                }
-
-                function showDialog(imageList) {
-                    var win, data = {}, dom = editor.dom, imgElm = editor.selection.getNode();
-                    var width, height, imageListCtrl, classListCtrl, imageDimensions = editor.settings.image_dimensions !== false;
-                    var binImageCode = 'images/redacted/' + uuid.v4() + '.img';
-
-                    function recalcSize() {
-                        var widthCtrl, heightCtrl, newWidth, newHeight;
-
-                        widthCtrl = win.find('#width')[0];
-                        heightCtrl = win.find('#height')[0];
-
-                        if (!widthCtrl || !heightCtrl) {
-                            return;
-                        }
-
-                        newWidth = widthCtrl.value();
-                        newHeight = heightCtrl.value();
-
-                        if (win.find('#constrain')[0].checked() && width && height && newWidth && newHeight) {
-                            if (width != newWidth) {
-                                newHeight = Math.round((newWidth / width) * newHeight);
-                                heightCtrl.value(newHeight);
-                            } else {
-                                newWidth = Math.round((newHeight / height) * newWidth);
-                                widthCtrl.value(newWidth);
                             }
+                            showPopupPanel();
                         }
+                    });
 
-                        width = newWidth;
-                        height = newHeight;
+                    if (imgElm.nodeName == 'IMG' && !imgElm.getAttribute('data-mce-object') && !imgElm.getAttribute('data-mce-placeholder')) {
+                        scope.image = {
+                            src: dom.getAttrib(imgElm, 'src'),
+                            alt: dom.getAttrib(imgElm, 'alt'),
+                            width: getCalculatedWidth(dom.getAttrib(imgElm, 'width')),
+                            height: '',
+                            'original-width': getCalculatedOriginalWidth(dom.getAttrib(imgElm, 'original-width'))
+                        };
+                        setCalculatedAvailableSizes(scope.image['original-width']);
+
+                        scope.previewImageUrl = scope.image.src;
+                        scope.showRemoveImageButton = true;
+                        showPopupPanel();
+                    } else {
+                        scope.firstImage = true;
+                        imageManagement.triggerFileUpload();
                     }
 
-                    function onSubmitForm() {
+                    function getCalculatedWidth(width) {
+                        if (isNaN(width)) return maxWidth;
+                        if (width > maxWidth) return maxWidth;
+                        return parseInt(width, 10);
+                    }
+
+                    function getCalculatedOriginalWidth(width) {
+                        if (width == "") return maxWidth;
+                        if(isNaN(width)) return maxWidth;
+                        return parseInt(width, 10);
+                    }
+
+                    function setCalculatedAvailableSizes(originalWidth) {
+                        scope.availableSizes = [];
+                        if (originalWidth > smallWidth) scope.availableSizes.push({name: 'small', width: smallWidth});
+                        if (originalWidth > mediumWidth) scope.availableSizes.push({name: 'medium', width: mediumWidth});
+                        if (originalWidth > largeWidth) scope.availableSizes.push({name: 'large', width: largeWidth});
+                        scope.availableSizes.push({name: 'original', width: originalWidth > maxWidth ? maxWidth : originalWidth});
+                    }
+
+                    scope.submit = function () {
+                        if (file) {
+                            var code = 'images/redacted/' + uuid.v4() + '.img';
+                            scope.image.src = config.awsPath + code;
+
+                            imageManagement.upload({file: file, code: code}).then(function () {
+                                updateEditor();
+                            }, function (reason) {
+                                scope.violations.push('Upload failed: ' + reason);
+                            }, function () {
+                                scope.uploading = true;
+                            }).finally(function () {
+                                scope.uploading = false;
+                            });
+                        } else {
+                            updateEditor();
+                        }
+
+                        function updateWidthParam() {
+                            var src = scope.image.src;
+                            var index = src.indexOf('?');
+                            if (index > -1) src = src.slice(0, -src.slice(index).length);
+                            src += '?width=' + scope.image.width;
+                            scope.image.src = src;
+                        }
+
+                        function updateEditor() {
+                            updateWidthParam();
+                            editor.undoManager.transact(function () {
+                                imgElm.nodeName == 'IMG' ? updateImgElm() : createNewImgElm();
+                            });
+                            editModeRenderer.close({id: 'popup'});
+                        }
+
+                        function createNewImgElm() {
+                            scope.image.id = '__mcenew';
+                            editor.focus();
+                            editor.selection.setContent(dom.createHTML('img', scope.image));
+                            imgElm = dom.get('__mcenew');
+                            dom.setAttrib(imgElm, 'id', null);
+                            waitLoad(imgElm);
+                        }
+
+                        function updateImgElm() {
+                            dom.setAttribs(imgElm, scope.image);
+                            waitLoad(imgElm);
+                        }
+
                         function waitLoad(imgElm) {
                             function selectImage() {
                                 imgElm.onload = imgElm.onerror = null;
@@ -122,251 +152,85 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications']
                                     editor.nodeChanged();
                                 }
                             }
-
-                            imgElm.onload = function () {
-                                if (!data.width && !data.height && imageDimensions) {
-                                    dom.setAttribs(imgElm, {
-                                        width: imgElm.clientWidth,
-                                        height: imgElm.clientHeight
-                                    });
-                                }
-
-                                selectImage();
-                            };
-
+                            imgElm.onload = selectImage;
                             imgElm.onerror = selectImage;
                         }
+                    };
 
-                        recalcSize();
+                    scope.cancel = function () {
+                        editModeRenderer.close({id: 'popup'});
+                    };
 
-                        data = tinymce.extend(data, win.toJSON());
+                    scope.newImage = function () {
+                        imageManagement.triggerFileUpload();
+                    };
 
-                        if (!data.alt) {
-                            data.alt = '';
-                        }
+                    scope.remove = function () {
+                        dom.remove(imgElm);
+                        editor.focus();
+                        editor.nodeChanged();
+                        editModeRenderer.close({id: 'popup'});
+                    };
 
-                        if (data.width === '') {
-                            data.width = null;
-                        }
+                    function showPopupPanel() {
+                        if(!popupPanelOpened) {
+                            popupPanelOpened = true;
+                            editModeRenderer.open({
+                                id: 'popup',
+                                template: '<form name="tinymceImageForm" id="tinymceImageForm" ng-submit="submit()">' +
+                                '<h4 i18n code="i18n.menu.insert.image.title" read-only>{{var}}</h4>' +
+                                '<hr>' +
 
-                        if (data.height === '') {
-                            data.height = null;
-                        }
+                                '<div class="form-group" ng-if="violations.length > 0">' +
+                                '<div ng-repeat="violation in violations">' +
+                                '<span class="help-block text-danger" i18n code="upload.image.{{violation}}" read-only>{{var}}</span>' +
+                                '</div>' +
+                                '</div>' +
 
-                        data = {
-                            src: data.src,
-                            alt: data.alt,
-                            width: data.width,
-                            height: data.height,
-                            "bin-image": binImageCode
-                        };
+                                '<div class="form-group" ng-if="uploading">' +
+                                '<span class="help-block" i18n code="upload.image.uploading" read-only><i class="fa fa-spinner fa-spin fa-fw"></i> {{var}}</span>' +
+                                '</div>' +
 
-                        editor.undoManager.transact(function () {
-                            if (!data.src) {
-                                if (imgElm) {
-                                    dom.remove(imgElm);
-                                    editor.focus();
-                                    editor.nodeChanged();
-                                }
+                                '<div ng-hide="firstImage && violations.length > 0">' +
 
-                                return;
-                            }
+                                '<div class="bin-image-preview-wrapper" ng-if="previewImageUrl">' +
+                                '<div class="bin-image-preview" ng-click="newImage()">' +
+                                '<i class="fa fa-pencil fa-3x"></i>' +
+                                '<img ng-src="{{previewImageUrl}}">' +
+                                '</div>' +
+                                '</div>' +
 
-                            if (!imgElm) {
-                                data.id = '__mcenew';
-                                editor.focus();
-                                editor.selection.setContent(dom.createHTML('img', data));
-                                imgElm = dom.get('__mcenew');
-                                dom.setAttrib(imgElm, 'id', null);
-                            } else {
-                                dom.setAttribs(imgElm, data);
-                            }
+                                '<div class="form-group">' +
+                                '<label for="tinymceImageFormAltField" i18n code="i18n.menu.image.alt.label" read-only>{{var}}</label>' +
+                                '<input type="text" class="form-control" name="alt" id="tinymceImageFormAltField" ng-model="image.alt">' +
+                                '</div>' +
 
-                            waitLoad(imgElm);
-                        });
-                    }
+                                '<div class="form-group">' +
+                                '<label for="tinymceImageFormSizeField" i18n code="i18n.menu.image.size.label" read-only>{{var}}</label>' +
+                                '<select class="form-control" ng-model="image.width">' +
+                                '<option ng-repeat="size in availableSizes | orderBy: size.width" value="{{size.width}}" ' +
+                                'ng-selected="{{size.width == image.width}}"' +
+                                'i18n code="i18n.menu.image.size.{{size.name}}" read-only>{{var}}</option>' +
+                                '</select>' +
+                                '</div>' +
 
-                    function srcChange(e) {
-                        var meta = e.meta || {};
+                                '</div>' +
 
-                        if (imageListCtrl) {
-                            imageListCtrl.value(editor.convertURL(this.value(), 'src'));
-                        }
-
-                        tinymce.each(meta, function (value, key) {
-                            win.find('#' + key).value(value);
-                        });
-
-                        if (!meta.width && !meta.height) {
-                            var srcURL = this.value(),
-                                absoluteURLPattern = new RegExp('^(?:[a-z]+:)?//', 'i'),
-                                baseURL = editor.settings.document_base_url;
-
-                            //Pattern test the src url and make sure we haven't already prepended the url
-                            if (baseURL && !absoluteURLPattern.test(srcURL) && srcURL.substring(0, baseURL.length) !== baseURL) {
-                                this.value(baseURL + srcURL);
-                            }
-
-                            getImageSize(this.value(), function (data) {
-                                if (data.width && data.height && imageDimensions) {
-                                    width = data.width;
-                                    height = data.height;
-
-                                    win.find('#width').value(width);
-                                    win.find('#height').value(height);
-                                }
+                                '<div class=\"dropdown-menu-buttons\">' +
+                                '<hr>' +
+                                '<button type="button" class="btn btn-danger pull-left" ng-click="remove()" ng-if="showRemoveImageButton" ' +
+                                'i18n code="i18n.menu.remove.image.button" read-only>{{var}}</button>' +
+                                '<button type="button" class="btn btn-success pull-left" ng-click="newImage()" ng-if="!showRemoveImageButton" ' +
+                                'i18n code="i18n.menu.new.image.button" read-only>{{var}}</button>' +
+                                '<button type="submit" class="btn btn-primary" i18n code="clerk.menu.ok.button" read-only>{{var}}</button>' +
+                                '<button type="button" class="btn btn-default" ng-click="cancel()" i18n code="clerk.menu.cancel.button" read-only>{{var}}</button>' +
+                                '</div>' +
+                                '</form>',
+                                scope: scope
                             });
                         }
                     }
-
-                    width = dom.getAttrib(imgElm, 'width');
-                    height = dom.getAttrib(imgElm, 'height');
-
-                    if (imgElm.nodeName == 'IMG' && !imgElm.getAttribute('data-mce-object') && !imgElm.getAttribute('data-mce-placeholder')) {
-                        data = {
-                            src: dom.getAttrib(imgElm, 'src'),
-                            alt: dom.getAttrib(imgElm, 'alt'),
-                            "class": dom.getAttrib(imgElm, 'class'),
-                            width: width,
-                            height: height
-                        };
-                    } else {
-                        imgElm = null;
-                    }
-
-                    if (imageList) {
-                        imageListCtrl = {
-                            type: 'listbox',
-                            label: 'Image list',
-                            values: buildListItems(
-                                imageList,
-                                function (item) {
-                                    item.value = editor.convertURL(item.value || item.url, 'src');
-                                },
-                                [{text: 'None', value: ''}]
-                            ),
-                            value: data.src && editor.convertURL(data.src, 'src'),
-                            onselect: function (e) {
-                                var altCtrl = win.find('#alt');
-
-                                if (!altCtrl.value() || (e.lastControl && altCtrl.value() == e.lastControl.text())) {
-                                    altCtrl.value(e.control.text());
-                                }
-
-                                win.find('#src').value(e.control.value()).fire('change');
-                            },
-                            onPostRender: function () {
-                                imageListCtrl = this;
-                            }
-                        };
-                    }
-
-                    if (editor.settings.image_class_list) {
-                        classListCtrl = {
-                            name: 'class',
-                            type: 'listbox',
-                            label: 'Class',
-                            values: buildListItems(
-                                editor.settings.image_class_list,
-                                function (item) {
-                                    if (item.value) {
-                                        item.textStyle = function () {
-                                            return editor.formatter.getCssText({
-                                                inline: 'img',
-                                                classes: [item.value]
-                                            });
-                                        };
-                                    }
-                                }
-                            )
-                        };
-                    }
-
-                    // General settings shared between simple and advanced dialogs
-                    var generalFormItems = [
-                        {
-                            name: 'src',
-                            type: 'filepicker',
-                            filetype: 'image',
-                            label: 'Source',
-                            autofocus: true,
-                            onchange: srcChange
-                        },
-                        imageListCtrl
-                    ];
-
-                    if (editor.settings.image_description !== false) {
-                        generalFormItems.push({name: 'alt', type: 'textbox', label: 'Image description'});
-                    }
-
-                    if (imageDimensions) {
-                        generalFormItems.push({
-                            type: 'container',
-                            label: 'Dimensions',
-                            layout: 'flex',
-                            direction: 'row',
-                            align: 'center',
-                            spacing: 5,
-                            items: [
-                                {
-                                    name: 'width',
-                                    type: 'textbox',
-                                    maxLength: 5,
-                                    size: 3,
-                                    onchange: recalcSize,
-                                    ariaLabel: 'Width'
-                                },
-                                {type: 'label', text: 'x'},
-                                {
-                                    name: 'height',
-                                    type: 'textbox',
-                                    maxLength: 5,
-                                    size: 3,
-                                    onchange: recalcSize,
-                                    ariaLabel: 'Height'
-                                },
-                                {name: 'constrain', type: 'checkbox', checked: true, text: 'Constrain proportions'}
-                            ]
-                        });
-                    }
-
-                    generalFormItems.push(classListCtrl);
-
-                    imageManagement.fileUpload({
-                        dataType: 'json',
-                        add: function (e, d) {
-                            var violations = imageManagement.validate(d);
-                            if (violations.length == 0) {
-                                imageManagement.upload({file: d, code: binImageCode});
-
-                                $('.mce-window input')[0].value = config.awsPath + binImageCode;
-                            } else {
-                                violations.forEach(function (v) {
-                                    topicMessageDispatcher.fire('system.warning', {
-                                        code: 'upload.image.' + v,
-                                        default: v
-                                    });
-                                });
-                            }
-                        }
-                    });
-
-                    win = editor.windowManager.open({
-                        title: 'Insert/edit image',
-                        data: data,
-                        body: generalFormItems,
-                        onSubmit: onSubmitForm
-                    });
                 }
-
-                editor.addButton('binartax.img', {
-                    icon: 'image',
-                    tooltip: 'Insert/edit image',
-                    onclick: createImageList(showDialog),
-                    stateSelector: 'img:not([data-mce-object],[data-mce-placeholder])'
-                });
-
-                editor.addCommand('mceImage', createImageList(showDialog));
             });
         }
     }]);

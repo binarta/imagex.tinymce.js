@@ -1,0 +1,48 @@
+{
+  "msgs":{
+    "en":{
+      "i18n.menu.insert.image.title": "Insert image",
+      "i18n.menu.image.alt.label": "Image description",
+      "i18n.menu.image.size.label": "Size",
+      "i18n.menu.remove.image.button": "Remove image",
+      "i18n.menu.new.image.button": "New image",
+      "i18n.menu.image.size.small": "Small",
+      "i18n.menu.image.size.medium": "Medium",
+      "i18n.menu.image.size.large": "Large",
+      "i18n.menu.image.size.original": "Original"
+    },
+    "nl":{
+      "i18n.menu.insert.image.title": "Afbeelding toevoegen",
+      "i18n.menu.image.alt.label": "Beschrijving van de afbeelding",
+      "i18n.menu.image.size.label": "Grootte",
+      "i18n.menu.remove.image.button": "Verwijder afbeelding",
+      "i18n.menu.new.image.button": "Nieuwe afbeelding",
+      "i18n.menu.image.size.small": "Klein",
+      "i18n.menu.image.size.medium": "Medium",
+      "i18n.menu.image.size.large": "Groot",
+      "i18n.menu.image.size.original": "Origineel"
+    },
+    "fr":{
+      "i18n.menu.insert.image.title": "Insert image",
+      "i18n.menu.image.alt.label": "Image description",
+      "i18n.menu.image.size.label": "Size",
+      "i18n.menu.remove.image.button": "Remove image",
+      "i18n.menu.new.image.button": "New image",
+      "i18n.menu.image.size.small": "Small",
+      "i18n.menu.image.size.medium": "Medium",
+      "i18n.menu.image.size.large": "Large",
+      "i18n.menu.image.size.original": "Original"
+    },
+    "de":{
+      "i18n.menu.insert.image.title": "Insert image",
+      "i18n.menu.image.alt.label": "Image description",
+      "i18n.menu.image.size.label": "Size",
+      "i18n.menu.remove.image.button": "Remove image",
+      "i18n.menu.new.image.button": "New image",
+      "i18n.menu.image.size.small": "Small",
+      "i18n.menu.image.size.medium": "Medium",
+      "i18n.menu.image.size.large": "Large",
+      "i18n.menu.image.size.original": "Original"
+    }
+  }
+}
