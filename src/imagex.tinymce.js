@@ -175,9 +175,20 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                     function showPopupPanel() {
                         if(!popupPanelOpened) {
                             popupPanelOpened = true;
+
+                            scope.init = function () {
+                                toggleFocusOnInputToFixOnScreenKeyboard();
+                            };
+
+                            function toggleFocusOnInputToFixOnScreenKeyboard() {
+                                var input = $('#tinymceImageFormAltField');
+                                input.focus();
+                                input.blur();
+                            }
+
                             editModeRenderer.open({
                                 id: 'popup',
-                                template: '<form name="tinymceImageForm" id="tinymceImageForm" ng-submit="submit()">' +
+                                template: '<form name="tinymceImageForm" id="tinymceImageForm" ng-submit="submit()" ng-init="init()">' +
                                 '<h4 i18n code="i18n.menu.insert.image.title" read-only ng-bind="var"></h4>' +
                                 '<hr>' +
 
