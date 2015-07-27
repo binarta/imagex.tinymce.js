@@ -9,10 +9,7 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
         function addPlugin() {
             $window.tinymce.PluginManager.add('binartax.img', function (editor) {
 
-                const smallWidth = 100,
-                    mediumWidth = 300,
-                    largeWidth = 500,
-                    maxWidth = 750;
+                var smallWidth = 100, mediumWidth = 300, largeWidth = 500, maxWidth = 750;
 
                 editor.addButton('binartax.img', {
                     icon: 'image',
