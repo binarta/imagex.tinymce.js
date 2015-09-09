@@ -186,6 +186,7 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                             editModeRenderer.open({
                                 id: 'popup',
                                 template: '<form name="tinymceImageForm" id="tinymceImageForm" ng-submit="submit()" ng-init="init()">' +
+                                '<div class="bin-menu-edit-body">' +
                                 '<h4 i18n code="i18n.menu.insert.image.title" read-only ng-bind="var"></h4>' +
                                 '<hr>' +
 
@@ -224,9 +225,9 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                                 '</div>' +
 
                                 '</div>' +
+                                '</div>' +
 
-                                '<div class=\"dropdown-menu-buttons\">' +
-                                '<hr>' +
+                                '<div class=\"bin-menu-edit-actions\">' +
                                 '<button type="button" class="btn btn-danger pull-left" ng-click="remove()" ng-disabled="uploading" ng-if="showRemoveImageButton" ' +
                                 'i18n code="i18n.menu.remove.image.button" read-only ng-bind="var"></button>' +
                                 '<button type="button" class="btn btn-success pull-left" ng-click="newImage()" ng-disabled="uploading" ng-if="!showRemoveImageButton" ' +
