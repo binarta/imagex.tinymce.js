@@ -1,0 +1,5 @@
+{
+  "default": {
+    "imagex.tinymce": "bower_components/binarta.imagex.tinymce/src/imagex.tinymce.js"
+  }
+}

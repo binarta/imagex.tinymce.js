@@ -82,6 +82,7 @@ describe('imagex.tinymce', function () {
                 }
             }
         };
+        $window.URL = undefined;
     }));
 
     it('register on tinymce.loaded notification', function () {
@@ -94,7 +95,7 @@ describe('imagex.tinymce', function () {
 
     describe('when tinymce is loaded', function () {
         beforeEach(function () {
-            registry.calls[0].args[0].handler();
+            registry.calls.first().args[0].handler();
         });
 
         it('add plugin to tinymce plugin-manager', function () {
@@ -138,8 +139,8 @@ describe('imagex.tinymce', function () {
 
             describe('with valid file', function () {
                 beforeEach(function () {
-                    imageManagement.validate.andReturn([]);
-                    imageManagement.fileUpload.calls[0].args[0].add(null, validFile);
+                    imageManagement.validate.and.returnValue([]);
+                    imageManagement.fileUpload.calls.first().args[0].add(null, validFile);
                 });
 
                 it('file validation has been triggered', function () {
@@ -186,7 +187,7 @@ describe('imagex.tinymce', function () {
                         var onUploadSuccess;
 
                         beforeEach(function () {
-                            imageManagement.upload.andReturn({
+                            imageManagement.upload.and.returnValue({
                                 then: function (callback) {
                                     onUploadSuccess = callback;
                                     return {
@@ -226,8 +227,8 @@ describe('imagex.tinymce', function () {
 
             describe('with invalid file', function () {
                 beforeEach(function () {
-                    imageManagement.validate.andReturn(['violation']);
-                    imageManagement.fileUpload.calls[0].args[0].add(null, 'invalid');
+                    imageManagement.validate.and.returnValue(['violation']);
+                    imageManagement.fileUpload.calls.first().args[0].add(null, 'invalid');
                     scope = editModeRenderer.openSpy.scope;
                 });
 
@@ -429,8 +430,8 @@ describe('imagex.tinymce', function () {
                 });
 
                 function execute() {
-                    imageManagement.validate.andReturn([]);
-                    imageManagement.fileUpload.calls[0].args[0].add(null, validFile);
+                    imageManagement.validate.and.returnValue([]);
+                    imageManagement.fileUpload.calls.first().args[0].add(null, validFile);
                     scope = editModeRenderer.openSpy.scope;
                     mockImageListener();
                 }
