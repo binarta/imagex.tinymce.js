@@ -23,14 +23,14 @@
       "i18n.menu.image.size.original": "Origineel"
     },
     "fr":{
-      "i18n.menu.insert.image.title": "Insert image",
-      "i18n.menu.image.alt.label": "Image description",
-      "i18n.menu.image.size.label": "Size",
-      "i18n.menu.remove.image.button": "Remove image",
-      "i18n.menu.new.image.button": "New image",
-      "i18n.menu.image.size.small": "Small",
-      "i18n.menu.image.size.medium": "Medium",
-      "i18n.menu.image.size.large": "Large",
+      "i18n.menu.insert.image.title": "Insérer une image",
+      "i18n.menu.image.alt.label": "Description de l'image",
+      "i18n.menu.image.size.label": "Dimension",
+      "i18n.menu.remove.image.button": "Supprimer l'image",
+      "i18n.menu.new.image.button": "Nouvelle image",
+      "i18n.menu.image.size.small": "Petit",
+      "i18n.menu.image.size.medium": "Moyen",
+      "i18n.menu.image.size.large": "Grand",
       "i18n.menu.image.size.original": "Original"
     },
     "de":{
