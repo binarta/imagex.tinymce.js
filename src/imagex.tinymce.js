@@ -218,9 +218,9 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                                 '<div class="form-group">' +
                                 '<label for="tinymceImageFormSizeField" i18n code="i18n.menu.image.size.label" read-only ng-bind="var"></label>' +
                                 '<select class="form-control" ng-disabled="uploading" ng-model="image.width">' +
-                                '<option ng-repeat="size in availableSizes | orderBy: size.width" value="{{size.width}}" ' +
-                                'ng-selected="{{size.width == image.width}}"' +
-                                'i18n code="i18n.menu.image.size.{{size.name}}" read-only ng-bind="var"></option>' +
+                                '<option ng-repeat="size in availableSizes | orderBy: size.width" ng-value="size.width" ' +
+                                'ng-selected="size.width === image.width"' +
+                                'i18n code="i18n.menu.image.size.{{::size.name}}" read-only ng-bind="var"></option>' +
                                 '</select>' +
                                 '</div>' +
 
