@@ -5,7 +5,7 @@ describe('imagex.tinymce', function () {
     const smallWidth = 100,
         mediumWidth = 300,
         largeWidth = 500,
-        maxWidth = 750;
+        maxWidth = 1920;
 
     var registry, $window, tinymcePluginName, editorSpy, imageManagement, editModeRenderer, config, scope;
     var imgElm = {};
@@ -214,7 +214,7 @@ describe('imagex.tinymce', function () {
                             });
 
                             it('width is added to src', function () {
-                                expect(scope.image.src).toEqual('aws/path/images/redacted/123456.img?width=750');
+                                expect(scope.image.src).toEqual('aws/path/images/redacted/123456.img?width=' + maxWidth);
                             });
 
                             it('panel is closed', function () {
@@ -254,9 +254,9 @@ describe('imagex.tinymce', function () {
                 });
 
                 [
-                    {actual: "100%", expected: 750},
-                    {actual: "30px", expected: 750},
-                    {actual: "10000", expected: 750},
+                    {actual: "100%", expected: maxWidth},
+                    {actual: "30px", expected: maxWidth},
+                    {actual: "10000", expected: maxWidth},
                     {actual: "700", expected: 700},
                     {actual: "501", expected: 501},
                     {actual: "500", expected: 500},
@@ -305,7 +305,7 @@ describe('imagex.tinymce', function () {
                             expect(scope.image).toEqual({
                                 src: 'src',
                                 alt: 'alt',
-                                width: 750,
+                                width: maxWidth,
                                 height: '',
                                 'original-width': 10000
                             });
@@ -368,7 +368,7 @@ describe('imagex.tinymce', function () {
                         expect(scope.image).toEqual({
                             src: 'src',
                             alt: 'alt',
-                            width: 750,
+                            width: maxWidth,
                             height: '',
                             'original-width': 600
                         });
@@ -438,12 +438,30 @@ describe('imagex.tinymce', function () {
 
                 [
                     {
-                        imageSize: 751,
+                        imageSize: 1930,
                         expected: [
                             {name: 'small', width: smallWidth},
                             {name: 'medium', width: mediumWidth},
                             {name: 'large', width: largeWidth},
                             {name: 'original', width: maxWidth}
+                        ]
+                    },
+                    {
+                        imageSize: 1920,
+                        expected: [
+                            {name: 'small', width: smallWidth},
+                            {name: 'medium', width: mediumWidth},
+                            {name: 'large', width: largeWidth},
+                            {name: 'original', width: maxWidth}
+                        ]
+                    },
+                    {
+                        imageSize: 1919,
+                        expected: [
+                            {name: 'small', width: smallWidth},
+                            {name: 'medium', width: mediumWidth},
+                            {name: 'large', width: largeWidth},
+                            {name: 'original', width: 1919}
                         ]
                     },
                     {
@@ -452,16 +470,7 @@ describe('imagex.tinymce', function () {
                             {name: 'small', width: smallWidth},
                             {name: 'medium', width: mediumWidth},
                             {name: 'large', width: largeWidth},
-                            {name: 'original', width: maxWidth}
-                        ]
-                    },
-                    {
-                        imageSize: 749,
-                        expected: [
-                            {name: 'small', width: smallWidth},
-                            {name: 'medium', width: mediumWidth},
-                            {name: 'large', width: largeWidth},
-                            {name: 'original', width: 749}
+                            {name: 'original', width: 750}
                         ]
                     },
                     {
