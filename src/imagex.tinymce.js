@@ -95,7 +95,7 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                     scope.submit = function () {
                         if (file) {
                             var code = 'images/redacted/' + uuid.v4() + '.img';
-                            scope.image.src = config.awsPath + code;
+                            scope.image.src = 'image/' + config.namespace + '/' + code;
 
                             imageManagement.upload({file: file, code: code}).then(function () {
                                 updateEditor();

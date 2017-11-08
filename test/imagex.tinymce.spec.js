@@ -30,7 +30,7 @@ describe('imagex.tinymce', function () {
         imageManagement = _imageManagement_;
         editModeRenderer = _editModeRenderer_;
         config = _config_;
-        config.awsPath = 'aws/path/';
+        config.namespace = 'namespace';
 
         editorSpy = {
             selection: {
@@ -213,8 +213,12 @@ describe('imagex.tinymce', function () {
                                 onUploadSuccess();
                             });
 
+                            it('use a relative image path', function () {
+                                expect(scope.image.src).toContain('image/' + config.namespace + '/images/redacted/');
+                            });
+
                             it('width is added to src', function () {
-                                expect(scope.image.src).toEqual('aws/path/images/redacted/123456.img?width=' + maxWidth);
+                                expect(scope.image.src).toContain('123456.img?width=' + maxWidth);
                             });
 
                             it('panel is closed', function () {
