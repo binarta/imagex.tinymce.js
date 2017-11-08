@@ -1,5 +1,5 @@
-angular.module('imagex.tinymce', ['image-management', 'config', 'notifications', 'toggle.edit.mode'])
-    .run(['$rootScope', '$window', 'imageManagement', 'config', 'ngRegisterTopicHandler', 'editModeRenderer', function ($rootScope, $window, imageManagement, config, ngRegisterTopicHandler, editModeRenderer) {
+angular.module('imagex.tinymce', ['image-management', 'notifications', 'toggle.edit.mode', 'binarta-mediajs-angular1'])
+    .run(['$rootScope', '$window', 'imageManagement', 'ngRegisterTopicHandler', 'editModeRenderer', 'binarta', function ($rootScope, $window, imageManagement, ngRegisterTopicHandler, editModeRenderer, binarta) {
         ngRegisterTopicHandler({
             topic: 'tinymce.loaded',
             handler: addPlugin,
@@ -95,7 +95,7 @@ angular.module('imagex.tinymce', ['image-management', 'config', 'notifications',
                     scope.submit = function () {
                         if (file) {
                             var code = 'images/redacted/' + uuid.v4() + '.img';
-                            scope.image.src = 'image/' + config.namespace + '/' + code;
+                            scope.image.src = binarta.media.images.toRelativeURL({path: code});
 
                             imageManagement.upload({file: file, code: code}).then(function () {
                                 updateEditor();

@@ -1,5 +1,6 @@
 describe('imagex.tinymce', function () {
 
+    beforeEach(module('binartajs-angular1-spec'));
     beforeEach(module('imagex.tinymce'));
 
     const smallWidth = 100,
